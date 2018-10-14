@@ -1,11 +1,7 @@
----
-title: "HW 5 Yizhi ZHANG"
-output: pdf_document
----
 
 ```{r}
 library(Matrix)
-setwd("/Volumes/GoogleDrive/My Drive/Fordham/machine_learning/Assignment_5/")
+
 
 # H: a matrix of histograms, which contains one histogram vector in each row. Each column corresponds to a histogram bin.
 # K: the number of clusters.
