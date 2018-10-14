@@ -146,7 +146,7 @@ cv_ada<-function(X_train,y_train, x_test, y_test, B,K){
 }
 ```
 
-At each iteration, perform 5-fold cross validation to estimate the training and test error of the current classifier?
+At each iteration, perform 5-fold cross validation to estimate the training and test error of the current classifier.
 
 ```{r}
 library(reshape2)
