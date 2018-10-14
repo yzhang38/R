@@ -1,16 +1,9 @@
----
-title: "HW 3 
-Yizhi Zhang"
-output: pdf_document
----
+
 
 Train a linear SVM with soft margin.
 
-```{r}
-library(e1071)
 
-#set working directory
-setwd("/Volumes/GoogleDrive/My Drive/Fordham/machine_learning/Assignment_3")
+library(e1071)
 
 #read data
 train.5 <- read.csv("train.5.txt", header=F)
@@ -55,11 +48,10 @@ library(ggplot2)
 
 # plot the cross-validation estimates of the misclassification rate
 ggplot(data=tune_linear$performances,aes(x=cost,y=error))+geom_line()+geom_point(size=3,shape=21,fill="white")
-```
 
 Train a linear SVM with soft margin and RBF kernel.
 
-```{r}
+
 set.seed(10)
 tune_rbf <- tune(svm, ytrain~., data=train,scale=FALSE, kernel="radial",
 ranges=list(cost=c(00.0001,0.001,0.01,0.1,1,5,10,100),
@@ -91,4 +83,4 @@ rbf_per$cost<-as.factor(rbf_per$cost)
 
 # Plot a function of the margin parameter and the kernel bandwidth in the non_linear case
 ggplot(data=rbf_per,mapping=aes(x = cost, y= gamma))+geom_tile(aes(fill=error))
-```
+
