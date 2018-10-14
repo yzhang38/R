@@ -1,0 +1,192 @@
+---
+title: "homework4 
+Yizhi Zhang"
+output: pdf_document
+---
+
+### AdaBoost algorithm
+
+Weak learner training routine. The output pars is a list which contains the parameters specifying the result classifier.
+
+```{r}
+
+train <- function(X, w, y){
+  n <- nrow(X)
+  p <- ncol(X)
+  err <- c()
+  err_min <- c()
+  theta <- c()
+  pred <- c()
+  m <- c()
+  m_j <-c()
+  for (j in 1:p){
+    xj <- X[,j]
+    xj_unq <- unique(xj) # Choose the unique values in Xj.
+    for (i in 1:length(xj_unq)){ # Use every unique value as theta as 
+      pred[xj > xj_unq[i]] <- 1  # check which one results in the smallest
+      pred[xj <= xj_unq[i]] <- -1 # error.
+      m[i] <- ifelse(mean(pred==y)>0.5,1,-1) # If more than 50% the 
+      #  predictions are correct, m is 1, else -1. (Determine the orientation
+      # of the hyperplane).
+      err[i] <- sum(w*(y!=pred*m[i]))/sum(w) # calculate the error for each  # theta.
+      
+    }
+    err_min[j] <- min(err) # Choose the unique xi with the minimum error as
+    # theta.
+    theta[j] <- xj_unq[which.min(err)]
+    m_j[j] <- m[which.min(err)] # Choose the corresponding m.
+    
+  }
+  op_j <-which.min(err_min) # Choose the minimum theta across all columns.
+  op_theta <- theta[which.min(err_min)]
+  op_m <- m_j[op_j]
+  
+  pars <- list(j = op_j, theta = op_theta, m = op_m)
+  
+  return(pars)
+}
+```
+
+Classification routine, which evaluates the weak learner on X using the parameterization pars.
+
+```{r}
+classify<-function(X,pars){
+  
+  j <- pars$j
+  theta <- pars$theta
+  m <- pars$m
+  lb <- c()
+  
+  xj <- X[,j]
+  lb[xj>theta] <- m
+  lb[xj<=theta] <- -m
+  
+  
+  return(label= lb)
+}
+```
+
+Evaluate the boosting classifier on X. 
+alpha: the vector of voting weights.
+allPars: the parameters of all weak learners.
+
+```{r}
+agg_class<-function(X,alpha,allPars){
+  n <-nrow(X)
+  B <- length(alpha)
+  c_b = matrix(NA, nrow=n, ncol = B)
+  for (b in 1:B){ # compute alpha times the classifiers of each iteration.
+    c_b[,b] <-alpha[b] * classify(X, allPars[[b]])  
+  }
+  c_hat = sign(rowSums(c_b)) # compute the result by aggregating classifiers.
+  
+  return(c_hat)   
+}
+```
+
+AdaBoost algorithm.
+
+```{r}
+
+AdaBoost<-function(X, y,B){
+  n <- nrow(X)
+  w <- rep((1/n),n)
+  err <- c()
+  alpha <- c()
+  pred <- matrix(NA, nrow = n, ncol = B)
+  allPars <- list()
+  c_hat <- matrix(NA, nrow=n, ncol=B)
+  for (b in 1:B){
+    allPars[[b]] <- train(X, w, y)
+    pred[,b] <- classify(X, allPars[[b]])
+    err[b] <- sum(w*(pred[,b]!=y))/sum(w) # compute error in iteration b.
+    alpha[b] <- log((1-err[b])/err[b]) # compute voting weights of iteration # b.
+    w <- w*exp(alpha[b]*(pred[,b]!=y)) # compute weights of iteration b+1.
+    
+  }
+  return(list(alpha=alpha,allPars=allPars))
+}
+
+```
+
+
+Function for cross validation. 
+
+```{r}
+cv_ada<-function(X_train,y_train, x_test, y_test, B,K){
+  set.seed(100)
+  train_pred <- c()
+  test_pred <- c()
+  train_err<- matrix(NA, nrow=B, ncol=K)
+  test_err <- matrix(NA, nrow=B, ncol=K)
+  test_input_err <- matrix(NA, nrow=B, ncol=K)
+  test_input <- c()
+  idx <- sample(1:nrow(X_train)) # shuffle the indices of X
+  x_shuffle <- X_train[idx,] # reorder X by the shuffled indices
+  y_shuffle <- y_train[idx] # reorder y by the shuffled indices of X.
+  folds <- cut(seq(1,nrow(X_train)),breaks=K,label=FALSE) # create folds.
+  for(k in 1:K){   # loop across the K folds.
+    cv_idx <- which(folds == k, arr.ind=TRUE) # Use the kth fold as test set.
+    Xtest <- x_shuffle[cv_idx,] 
+    Xtrain <- x_shuffle[-cv_idx,]
+    ytest <- y_shuffle[cv_idx]
+    ytrain <- y_shuffle[-cv_idx]
+    for (b in 1:B){
+      adab <- AdaBoost(Xtrain,ytrain,b)
+      train_pred <- agg_class(Xtrain,adab$alpha,adab$allPars)
+      train_err[b,k] <- mean(train_pred != ytrain) # misclassification rate  # of the bth iteration and kth fold for cross validation training set.
+      
+      test_pred <- agg_class(Xtest, adab$alpha, adab$allPars)
+      test_err[b,k] <- mean(test_pred!=ytest) # misclassification rate for   # of the bth iteration and kth fold cross validation test set.
+      
+      test_input <- agg_class(x_test, adab$alpha, adab$allPars)
+      test_input_err[b,k] <- mean(test_input!=y_test) # misclassification    # rate of the bth iteration and kth fold rate for the set-aside test set.
+    }
+  }
+  # Average the miscalssification rate across K folds.
+  miscl_train <- apply(train_err,1, mean) 
+  miscl_test <- apply(test_err,1,mean)
+  miscl_test_input <- apply(test_input_err,1,mean)
+  return(list(cv_train_err = miscl_train, cv_test_err = miscl_test, test_err = miscl_test_input))
+}
+```
+
+At each iteration, perform 5-fold cross validation to estimate the training and test error of the current classifier?
+
+```{r}
+library(reshape2)
+library(ggplot2)
+
+
+setwd("/Volumes/GoogleDrive/My Drive/Fordham/machine_learning")
+
+train_3 <- read.table("assignment_2/train_3.txt",header=F,sep=',')
+train_8 <- read.table("assignment_2/train_8.txt",header=F,sep=',')
+test <- read.table("assignment_2/zip_test.txt",header=F,sep=' ')
+
+test_38=test[test$V1 %in%c(3,8),]
+
+X <- rbind(train_3, train_8)
+y <- rep(c(-1,1), c(nrow(train_3),nrow(train_8)))
+
+y_test <- test_38$V1
+X_test <- test_38[,-1]
+y_test[y_test == 3] <- -1
+y_test[y_test == 8] <- 1
+
+K=5
+B=50
+cv_results<-cv_ada(X, y,X_test, y_test, B,K)
+
+
+df <- data.frame(iterations = 1:B,cv_train = cv_results[[1]],
+               cv_test = cv_results[[2]], test_err= cv_results[[3]])
+df_melt <- melt(df,measure.vars=c("cv_train","cv_test", "test_err"))
+
+ggplot(data=df_melt, aes(x=iterations,y=value, color= variable)) +
+  geom_line(stat="identity")
+  
+
+```
+
+
