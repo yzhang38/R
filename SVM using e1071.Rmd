@@ -2,7 +2,7 @@
 
 Train a linear SVM with soft margin.
 
-
+```{r}
 library(e1071)
 
 #read data
@@ -48,7 +48,9 @@ library(ggplot2)
 
 # plot the cross-validation estimates of the misclassification rate
 ggplot(data=tune_linear$performances,aes(x=cost,y=error))+geom_line()+geom_point(size=3,shape=21,fill="white")
+```
 
+```{r}
 Train a linear SVM with soft margin and RBF kernel.
 
 
@@ -83,4 +85,4 @@ rbf_per$cost<-as.factor(rbf_per$cost)
 
 # Plot a function of the margin parameter and the kernel bandwidth in the non_linear case
 ggplot(data=rbf_per,mapping=aes(x = cost, y= gamma))+geom_tile(aes(fill=error))
-
+```
