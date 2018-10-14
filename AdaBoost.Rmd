@@ -153,11 +153,9 @@ library(reshape2)
 library(ggplot2)
 
 
-setwd("/Volumes/GoogleDrive/My Drive/Fordham/machine_learning")
-
-train_3 <- read.table("assignment_2/train_3.txt",header=F,sep=',')
-train_8 <- read.table("assignment_2/train_8.txt",header=F,sep=',')
-test <- read.table("assignment_2/zip_test.txt",header=F,sep=' ')
+train_3 <- read.table("train_3.txt",header=F,sep=',')
+train_8 <- read.table("train_8.txt",header=F,sep=',')
+test <- read.table("zip_test.txt",header=F,sep=' ')
 
 test_38=test[test$V1 %in%c(3,8),]
 
