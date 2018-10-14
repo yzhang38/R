@@ -1,0 +1,94 @@
+---
+title: "HW 3 
+Yizhi Zhang"
+output: pdf_document
+---
+
+Train a linear SVM with soft margin.
+
+```{r}
+library(e1071)
+
+#set working directory
+setwd("/Volumes/GoogleDrive/My Drive/Fordham/machine_learning/Assignment_3")
+
+#read data
+train.5 <- read.csv("train.5.txt", header=F)
+train.6 <- read.csv("train.6.txt", header=F)
+
+#combine dataset of 5 and 6
+xtrain <- rbind(train.5, train.6)
+ytrain <- rep(c(-1,1), c(nrow(train.5),nrow(train.6)))
+
+#combine predictors and outcomes
+df <- data.frame(cbind(xtrain,ytrain))
+df$ytrain <- as.factor(df$ytrain)
+
+#randomly select about 20% of the data and set it as a test set.
+set.seed(10)
+split <- sample(x = nrow(df),size=0.8*nrow(df),replace=F)
+train <- df[split,]
+test <- df[-split,]
+
+#Train a linear SVM with soft margin.
+set.seed(10)
+params <- tune.control(sampling = 'cross',cross=5)
+tune_linear=tune(svm,ytrain~.,data=train,scale = FALSE, kernel="linear", type='C-classification', 
+ranges=list(cost=c(0.0001,0.001,0.01,0.1,1,5,10,100)),tunecontrol=params)
+
+# Use the best model to predict test set
+print(tune_linear$best.parameters)
+tune_linear_best <-svm(x=train[,1:256],y=train$ytrain,kernel="linear",type="C-classification",C=0.01,cross=5)
+pred_train_linear <-predict(tune_linear_best, train[,1:256])
+
+t_train <- table(predict = pred_train_linear,truth = train$ytrain)
+
+pred_test_linear <- predict(tune_linear_best, test[,1:256])
+
+t_test <- table(predict = pred_test_linear,truth = test$ytrain)
+
+## misclassification rate for test set
+mis_rate_test =1- mean(pred_test_linear == test$ytrain)
+print(mis_rate_test)
+
+library(ggplot2)
+
+# plot the cross-validation estimates of the misclassification rate
+ggplot(data=tune_linear$performances,aes(x=cost,y=error))+geom_line()+geom_point(size=3,shape=21,fill="white")
+```
+
+Train a linear SVM with soft margin and RBF kernel.
+
+```{r}
+set.seed(10)
+tune_rbf <- tune(svm, ytrain~., data=train,scale=FALSE, kernel="radial",
+ranges=list(cost=c(00.0001,0.001,0.01,0.1,1,5,10,100),
+gamma=c(0.0001,0.001,0.01,0.1,1,5,10,100)),tunecontrol=params)
+
+
+print(tune_rbf$best.parameters)
+
+# Use the best parameter to train
+set.seed(10)
+tune_rbf_best <- svm(x=train[,1:256],y=train$ytrain,kernel="radial",type="C-classification",C=1, gamma = 0.01, cross=5)
+
+pred_train_rbf <-predict(tune_rbf_best, train[,1:256])
+
+t_rbf_train <- table(predict = pred_train_rbf,truth = train$ytrain)
+
+pred_test_rbf <- predict(tune_rbf_best, test[,1:256])
+
+t_rbf_test <- table(predict = pred_test_rbf,truth = test$ytrain)
+
+## misclassification rate for test set
+mis_rate_rbf_test =1- mean(pred_test_rbf == test$ytrain)
+print(mis_rate_rbf_test)
+
+rbf_per <- tune_rbf$performances
+
+rbf_per$gamma<-as.factor(rbf_per$gamma)
+rbf_per$cost<-as.factor(rbf_per$cost)
+
+# Plot a function of the margin parameter and the kernel bandwidth in the non_linear case
+ggplot(data=rbf_per,mapping=aes(x = cost, y= gamma))+geom_tile(aes(fill=error))
+```
