@@ -1,0 +1,66 @@
+---
+title: "HW 5 Yizhi ZHANG"
+output: pdf_document
+---
+
+```{r}
+library(Matrix)
+setwd("/Volumes/GoogleDrive/My Drive/Fordham/machine_learning/Assignment_5/")
+
+# H: a matrix of histograms, which contains one histogram vector in each row. Each column corresponds to a histogram bin.
+# K: the number of clusters.
+# tau: threshold parameters.
+
+M<-function(H,K,tau){
+  n<-nrow(H)
+  J<-ncol(H)
+  H[H==0]=.01
+  # Choose K of the histograms at random and normalize each. These are initial centroids.
+  ttt<-sample(1:n,K,replace=FALSE)
+  ntt<-H[ttt,]
+  tt<-apply(ntt,1,function(x) x/sum(x))
+  
+  aao<-matrix(NA,n,K)
+  del=1
+
+  # Terminate the iteration when delta < tau
+  while(del>=tau){
+  # compute the multinomial probability of H_i with parameters t_k
+  phi<-exp(H%*%log(t(tt))) 
+  # compute the assignment probabilities a_ik
+  cc<-rep(1/K,K)
+  an<-cc*phi
+  ad<-rowSums(cc*phi)
+  aa<-an/ad
+  aa[is.na(aa)]<-0
+  
+  # compute new mixture weights c_k 
+  cc<-colSums(aa)/n
+  
+  # compute class centroids t_k
+  bb<-(t(aa))%*%H
+  tt=t(bb/rowSums(bb))
+  
+  # compute a measure of the change of assignments during the current iteration
+  ma<-aa-aao
+  aao<-aa
+  del<-norm(ma,"O")
+  }
+  
+  mm<-apply(aa,1,function(x) which.max(x))
+  return(mm)
+}
+
+H<-matrix(readBin("histograms.bin", "double", 640000), 40000, 16)
+
+p3<-M(H,K=3,tau=0.01)
+
+image(matrix(p3,nrow=200,ncol=200),col=rainbow(3))
+
+p4<-M(H,K=4,tau=0.01)
+image(matrix(p4,nrow=200,ncol=200),col=rainbow(4))
+
+p5<-M(H,K=5,tau=0.01)
+image(matrix(p5,nrow=200,ncol=200),col=rainbow(5))
+```
+
