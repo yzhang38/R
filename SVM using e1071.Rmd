@@ -50,10 +50,10 @@ library(ggplot2)
 ggplot(data=tune_linear$performances,aes(x=cost,y=error))+geom_line()+geom_point(size=3,shape=21,fill="white")
 ```
 
-```{r}
+
 Train a linear SVM with soft margin and RBF kernel.
 
-
+```{r}
 set.seed(10)
 tune_rbf <- tune(svm, ytrain~., data=train,scale=FALSE, kernel="radial",
 ranges=list(cost=c(00.0001,0.001,0.01,0.1,1,5,10,100),
