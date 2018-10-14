@@ -1,2 +1,3 @@
 # R
-Some machine learning algorithms
+Machine learning algorithms and R codes:
+AdaBoost, EM, PageRank
